@@ -1,0 +1,23 @@
+{
+	"name": "brosland/blockchain",
+	"description": "Nette extension for communication with blockchain.info bitcoin wallet.",
+	"keywords": ["nette", "blockchain", "brosland"],
+	"homepage": "",
+	"authors": [
+		{
+			"name": "Martin Bros",
+			"email": "mbskot@gmail.com"
+		}
+	],
+	"autoload": {
+		"psr-0": {
+			"Brosland\\Blockchain\\": "src/"
+		}
+	},
+	"minimum-stability": "dev",
+	"require": {
+		"php": ">= 5.5",
+		"nette/nette": "~2.3.0",
+		"kdyby/curl": "2.2.*@dev"
+	}
+}
