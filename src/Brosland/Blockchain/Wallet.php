@@ -88,7 +88,7 @@ class Wallet extends \Nette\Object
 	{
 		if ($this->balance === NULL || $preferSource)
 		{
-			$this->balance = $this->sendRequest('balance')->balance; // not required second password
+			$this->balance = $this->sendRequest('balance')->balance;
 		}
 
 		return $this->balance;
@@ -104,7 +104,7 @@ class Wallet extends \Nette\Object
 		{
 			$response = $this->sendRequest('list', array (
 				'confirmations' => $this->minConfirmations
-			)); // not required second password
+			));
 
 			$this->addresses = array ();
 
@@ -132,7 +132,7 @@ class Wallet extends \Nette\Object
 			$response = $this->sendRequest('address_balance', array (
 				'address' => $addressId,
 				'confirmations' => $this->minConfirmations
-			)); // not required second password
+			));
 
 			$address = new Address($response->address, $response->balance, $response->total_received);
 			$this->addresses[$addressId] = $address;
@@ -206,7 +206,7 @@ class Wallet extends \Nette\Object
 		}
 
 		$parameters = array (
-			'recipients' => Json::encode($transaction->getRecipients()), // TODO test
+			'recipients' => Json::encode($transaction->getRecipients()),
 			'from' => $transaction->getFrom(),
 			'note' => $transaction->getNote(),
 			'fee' => $transaction->getFee() > 0 ? $transaction->getFee() : NULL
