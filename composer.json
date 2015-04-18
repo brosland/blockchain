@@ -2,7 +2,8 @@
 	"name": "brosland/blockchain",
 	"description": "Nette extension for communication with blockchain.info bitcoin wallet.",
 	"keywords": ["nette", "blockchain", "brosland"],
-	"homepage": "",
+	"homepage": "http://bros.land",
+	"license": ["MIT"],
 	"authors": [
 		{
 			"name": "Martin Bros",
@@ -17,7 +18,7 @@
 	"minimum-stability": "dev",
 	"require": {
 		"php": ">= 5.5",
-		"nette/nette": "~2.3.0",
+		"nette/nette": "~2.3",
 		"kdyby/curl": "2.2.*@dev"
 	}
 }
