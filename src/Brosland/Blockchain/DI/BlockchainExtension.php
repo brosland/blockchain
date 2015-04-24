@@ -97,7 +97,7 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 				$service->setAutowired(FALSE);
 			}
 
-			$services[$serviceName] = $service;
+			$services[$name] = $service;
 		}
 
 		return $services;

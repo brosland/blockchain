@@ -148,7 +148,7 @@ class Blockchain extends \Nette\Object
 		{
 			try
 			{
-				return Json::decode($response->getResponse());
+				return Json::decode($response->getResponse(), Json::FORCE_ARRAY);
 			}
 			catch (\Nette\Utils\JsonException $ex)
 			{

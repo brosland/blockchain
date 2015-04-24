@@ -134,6 +134,6 @@ class Currency extends \Nette\Object
 	 */
 	public static function validate($code)
 	{
-		return isset(self::$TYPES[$code]);
+		return isset(self::$TYPES[\Nette\Utils\Strings::upper($code)]);
 	}
 }
