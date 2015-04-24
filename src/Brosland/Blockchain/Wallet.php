@@ -7,7 +7,7 @@ use Kdyby\Curl\Request,
 
 class Wallet extends \Nette\Object
 {
-	const BASE_URL = 'https://blockchain.info/merchant';
+	const BASE_URL = Blockchain::BASE_URL . '/merchant';
 
 
 	/**
@@ -134,7 +134,7 @@ class Wallet extends \Nette\Object
 				'confirmations' => $this->minConfirmations
 			));
 
-			$address = new Address($response->address, $response->balance, $response->total_received);
+			$address = new Address($addressId, $response->balance, $response->total_received);
 			$this->addresses[$addressId] = $address;
 		}
 
@@ -166,11 +166,6 @@ class Wallet extends \Nette\Object
 		$part = ($archived ? '' : 'un') . 'archive_address';
 
 		$this->sendRequest($part, array ('address' => $addressId));
-
-		if (isset($this->addresses[$addressId]))
-		{
-			$this->addresses[$addressId]->setArchived($archived);
-		}
 	}
 
 	/**
@@ -182,23 +177,15 @@ class Wallet extends \Nette\Object
 	{
 		$response = $this->sendRequest('auto_consolidate', array ('days' => $term));
 
-		foreach ($response->consolidated as $addressId)
-		{
-			if (isset($this->addresses[$addressId]))
-			{
-				$this->addresses[$addressId]->setArchived(TRUE);
-			}
-		}
-
 		return $response->consolidated;
 	}
 
 	/**
-	 * @param Transaction $transaction
+	 * @param TransactionRequest $transaction
 	 * @return TransactionResponse
 	 * @throws \Nette\InvalidArgumentException
 	 */
-	public function transfer(Transaction $transaction)
+	public function transfer(TransactionRequest $transaction)
 	{
 		if (count($transaction->getRecipients()) == 0)
 		{
@@ -218,13 +205,13 @@ class Wallet extends \Nette\Object
 	}
 
 	/**
-	 * @param string $part
+	 * @param string $endpoint
 	 * @param array $parameters
 	 * @return Json
 	 */
-	private function sendRequest($part = '', $parameters = array ())
+	private function sendRequest($endpoint = '', $parameters = array ())
 	{
-		$url = self::BASE_URL . '/' . $this->id . '/' . $part;
+		$url = self::BASE_URL . '/' . $this->id . '/' . $endpoint;
 		$get = array_merge($parameters, array (
 			'password' => $this->password,
 			'second_password' => $this->password2

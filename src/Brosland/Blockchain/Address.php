@@ -11,20 +11,48 @@ class Address extends \Nette\Object
 	/**
 	 * @var string
 	 */
+	private $hash160 = NULL;
+	/**
+	 * @var string
+	 */
 	private $label = NULL;
 	/**
-	 * @var int
+	 * @var string
 	 */
 	private $balance;
 	/**
-	 * @var int
+	 * @var string
 	 */
 	private $totalReceived;
 	/**
-	 * @var bool
+	 * @var string
 	 */
-	private $archived = FALSE;
+	private $totalSent = NULL;
+	/**
+	 * @var int
+	 */
+	private $unredeemed = NULL;
+	/**
+	 * @var array
+	 */
+	private $transactions = NULL;
 
+
+	/**
+	 * Returns new instance of Address created from responce of https://blockchain.info/address/$address?format=json
+	 * @param array|\Nette\Utils\ArrayHash $definition
+	 * @return Address
+	 */
+	public static function createFromArray($definition)
+	{
+		$address = new Address($definition['address'], $definition['final_balance'], $definition['total_received']);
+		$address->setHash160($definition['hash160'])
+			->setUnredeemed($definition['n_unredeemed'])
+			->setTotalSent($definition['total_sent'])
+			->setTransactions($definition['txs']);
+
+		return $address;
+	}
 
 	/**
 	 * @param string $address
@@ -47,12 +75,20 @@ class Address extends \Nette\Object
 	}
 
 	/**
-	 * @param string $address
+	 * @return string
+	 */
+	public function getHash160()
+	{
+		return $this->hash160;
+	}
+
+	/**
+	 * @param string $hash160
 	 * @return self
 	 */
-	public function setAddress($address)
+	public function setHash160($hash160)
 	{
-		$this->address = $address;
+		$this->hash160 = $hash160;
 
 		return $this;
 	}
@@ -77,7 +113,7 @@ class Address extends \Nette\Object
 	}
 
 	/**
-	 * @return int In Satoshi.
+	 * @return string
 	 */
 	public function getBalance()
 	{
@@ -85,7 +121,7 @@ class Address extends \Nette\Object
 	}
 
 	/**
-	 * @return int In Satoshi.
+	 * @return string
 	 */
 	public function getTotalReceived()
 	{
@@ -93,20 +129,58 @@ class Address extends \Nette\Object
 	}
 
 	/**
-	 * @return bool
+	 * @return string
 	 */
-	public function isArchived()
+	public function getTotalSent()
 	{
-		return $this->archived;
+		return $this->totalSent;
 	}
 
 	/**
-	 * @param bool $archived
+	 * @param string $totalSent
 	 * @return self
 	 */
-	public function setArchived($archived)
+	public function setTotalSent($totalSent)
 	{
-		$this->archived = $archived;
+		$this->totalSent = $totalSent;
+
+		return $this;
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getUnredeemed()
+	{
+		return $this->unredeemed;
+	}
+
+	/**
+	 * @param int $unredeemed
+	 * @return self
+	 */
+	public function setUnredeemed($unredeemed)
+	{
+		$this->unredeemed = $unredeemed;
+
+		return $this;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getTransactions()
+	{
+		return $this->transactions;
+	}
+
+	/**
+	 * @param array|\Nette\Utils\ArrayHash $transactions
+	 * @return self
+	 */
+	public function setTransactions($transactions)
+	{
+		$this->transactions = $transactions;
 
 		return $this;
 	}

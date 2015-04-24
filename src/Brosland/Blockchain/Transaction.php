@@ -2,120 +2,88 @@
 
 namespace Brosland\Blockchain;
 
+use DateTime;
+
 class Transaction extends \Nette\Object
 {
 	/**
-	 * @var string
-	 */
-	private $from = NULL;
-	/**
 	 * @var array
 	 */
-	private $recipients = array ();
-	/**
-	 * @var int
-	 */
-	private $fee = 0;
-	/**
-	 * @var string
-	 */
-	private $note = NULL;
+	private $definition;
 
 
 	/**
-	 * @param string $from Send from a specific Bitcoin Address
+	 * @param array $definition
 	 */
-	public function __construct($from)
+	public function __construct(array $definition)
 	{
-		$this->from = $from;
+		$this->definition = $definition;
+
+		if (is_int($definition['lock_time']))
+		{
+			$lockTime = new DateTime();
+			$lockTime->setTimestamp($definition['lock_time']);
+			$this->definition['lock_time'] = $lockTime;
+		}
+		else
+		{
+			$this->definition['lock_time'] = NULL;
+		}
 	}
 
 	/**
 	 * @return string
 	 */
-	public function getFrom()
+	public function getHash()
 	{
-		return $this->from;
+		return $this->definition['hash'];
 	}
 
 	/**
-	 * @param string $from
-	 * @return self
+	 * @return string
 	 */
-	public function setFrom($from)
+	public function getIndex()
 	{
-		$this->from = $from;
-
-		return $this;
+		return $this->definition['tx_index'];
 	}
 
 	/**
-	 * @param string $address
-	 * @param int $amount In Satoshi.
-	 * @return self
+	 * @return DateTime
 	 */
-	public function addTo($address, $amount)
+	public function getLockTime()
 	{
-		if (empty($amount))
-		{
-			unset($this->recipients[$address]);
-		}
-		else
-		{
-			$this->recipients[$address] = $amount;
-		}
-
-		return $this;
-	}
-
-	/**
-	 * @return array
-	 */
-	public function getRecipients()
-	{
-		return $this->recipients;
+		return $this->definition['lock_time'];
 	}
 
 	/**
 	 * @return int
 	 */
-	public function getFee()
+	public function getSize()
 	{
-		return $this->fee;
-	}
-
-	/**
-	 * Transaction fee value in Satoshi (must be greater than default fee).
-	 * 
-	 * @param int $fee
-	 * @return self
-	 */
-	public function setFee($fee)
-	{
-		$this->fee = $fee;
-
-		return $this;
+		return (int) $this->definition['size'];
 	}
 
 	/**
 	 * @return string
 	 */
-	public function getNote()
+	public function getRelayedBy()
 	{
-		return $this->note;
+		return $this->definition['relayed_by'];
 	}
 
 	/**
-	 * A public note to include with the transaction -- can only be attached to
-	 * transactions where all outputs are greater than 0.005 BTC.
-	 * 
-	 * @param string $note
-	 * @return self
+	 * @return int
 	 */
-	public function setNote($note = NULL)
+	public function getBlockHeight()
 	{
-		$this->note = $note;
+		return (int) $this->definition['block_height'];
+	}
 
-		return $this;
+	/**
+	 * @return int
+	 */
+	public function getVer()
+	{
+		return (int) $this->definition['ver'];
 	}
 }

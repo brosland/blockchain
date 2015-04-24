@@ -28,10 +28,13 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig(self::$DEFAULTS);
 
-		$builder->addDefinition($this->prefix('wallet'))
-			->setClass(\Brosland\Blockchain\Wallet::class)
-			->setArguments($config['wallet'])
-			->addSetup('setMinConfirmations', array ($config['minConfirmations']));
+		$blockchain = $builder->addDefinition($this->prefix('blockchain'))
+			->setClass(\Brosland\Blockchain\Blockchain::class);
+
+		foreach ($this->loadWallets($config['wallet']) as $name => $wallet)
+		{
+			$blockchain->addSetup('addWallet', array ($name, $wallet));
+		}
 
 		$router = $builder->addDefinition($this->prefix('router'))
 			->setClass(\Brosland\Blockchain\Routers\CallbackRouter::class)
@@ -58,5 +61,45 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 		{
 			$router->addSetup('addCallback', array ($builder->getDefinition($serviceName)));
 		}
+	}
+
+	/**
+	 * @param array $wallets
+	 * @return \Nette\DI\ServiceDefinition[]
+	 */
+	private function loadWallets($wallets)
+	{
+		if (isset($wallets['id']))
+		{
+			$wallets = array ('default' => $wallets);
+		}
+
+		$builder = $this->getContainerBuilder();
+		$config = $this->getConfig(self::$DEFAULTS);
+
+		$services = array ();
+
+		foreach ($wallets as $name => $wallet)
+		{
+			$serviceName = $this->prefix($name . '.wallet');
+
+			$service = $builder->addDefinition($serviceName)
+				->setClass(\Brosland\Blockchain\Wallet::class)
+				->setArguments(array (
+					$wallet['id'],
+					$wallet['password'],
+					$wallet['password2']
+				))
+				->addSetup('setMinConfirmations', array ($config['minConfirmations']));
+
+			if (!empty($services))
+			{
+				$service->setAutowired(FALSE);
+			}
+
+			$services[$serviceName] = $service;
+		}
+
+		return $services;
 	}
 }
