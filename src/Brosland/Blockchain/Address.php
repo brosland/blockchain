@@ -31,7 +31,7 @@ class Address extends \Nette\Object
 	/**
 	 * @var array
 	 */
-	private $transactions = NULL;
+	private $transactions = array ();
 
 
 	/**
@@ -41,27 +41,22 @@ class Address extends \Nette\Object
 	 */
 	public static function createFromArray($args)
 	{
-		$address = new Address($args['address'], $args['final_balance'],
-			$args['total_received']);
-		$address->setHash160($args['hash160'])
-			->setTotalSent($args['total_sent']);
-
-		$transactions = array ();
+		$address = new Address($args['address'], $args['final_balance'], $args['total_received']);
+		$address->hash160 = $args['hash160'];
+		$address->totalSent = $args['total_sent'];
 
 		foreach ($args['txs'] as $txArgs)
 		{
-			$transactions[$txArgs['hash']] = Transaction::createFromArray($txArgs);
+			$address->transactions[$txArgs['hash']] = Transaction::createFromArray($txArgs);
 		}
-
-		$address->setTransactions($transactions);
 
 		return $address;
 	}
 
 	/**
 	 * @param string $address
-	 * @param int $balance In Satoshi.
-	 * @param int $totalReceived In Satoshi.
+	 * @param string $balance In Satoshi.
+	 * @param string $totalReceived In Satoshi.
 	 */
 	public function __construct($address = NULL, $balance = 0, $totalReceived = 0)
 	{
@@ -84,17 +79,6 @@ class Address extends \Nette\Object
 	public function getHash160()
 	{
 		return $this->hash160;
-	}
-
-	/**
-	 * @param string $hash160
-	 * @return self
-	 */
-	public function setHash160($hash160)
-	{
-		$this->hash160 = $hash160;
-
-		return $this;
 	}
 
 	/**
@@ -141,33 +125,11 @@ class Address extends \Nette\Object
 	}
 
 	/**
-	 * @param string $totalSent
-	 * @return self
-	 */
-	public function setTotalSent($totalSent)
-	{
-		$this->totalSent = $totalSent;
-
-		return $this;
-	}
-
-	/**
 	 * @return array
 	 */
 	public function getTransactions()
 	{
 		return $this->transactions;
-	}
-
-	/**
-	 * @param array|\Nette\Utils\ArrayHash $transactions
-	 * @return self
-	 */
-	public function setTransactions($transactions)
-	{
-		$this->transactions = $transactions;
-
-		return $this;
 	}
 
 	/**

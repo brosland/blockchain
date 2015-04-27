@@ -49,7 +49,7 @@ class Blockchain extends \Nette\Object
 	 */
 	public function getBlock($hash)
 	{
-		return new Block($this->sendRequest('rawblock/' . $hash));
+		return Block::createFromArray($this->sendRequest('rawblock/' . $hash));
 	}
 
 	/**
@@ -58,7 +58,7 @@ class Blockchain extends \Nette\Object
 	 */
 	public function getTransaction($hash)
 	{
-		return new Transaction($this->sendRequest('rawtx/' . $hash));
+		return Transaction::createFromArray($this->sendRequest('rawtx/' . $hash));
 	}
 
 	/**

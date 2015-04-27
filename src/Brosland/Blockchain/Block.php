@@ -9,23 +9,40 @@ class Block extends \Nette\Object
 	/**
 	 * @var array
 	 */
-	private $definition;
+	private $args;
+	/**
+	 * @var Transaction[]
+	 */
+	private $transactions;
 
 
 	/**
-	 * @param array|\Nette\Utils\ArrayHash $definition
+	 * Returns new instance of Block created from responce of https://blockchain.info/rawblock/$hash?format=json
+	 * @param array $args
+	 * @return Block
 	 */
-	public function __construct($definition)
+	public static function createFromArray($args)
 	{
-		$this->definition = $definition;
+		$args['time'] = DateTime::createFromFormat('U', $args['time']);
 
-		$time = new DateTime();
-		$time->setTimestamp($definition['time']);
-		$this->definition['time'] = $time;
+		$block = new Block($args);
 
-		$receivedTime = new DateTime();
-		$receivedTime->setTimestamp($definition['received_time']);
-		$this->definition['received_time'] = $receivedTime;
+		foreach ($block->args['tx'] as $txArgs)
+		{
+			$block->transactions[$txArgs['hash']] = Transaction::createFromArray($txArgs);
+		}
+
+		unset($block->args['tx']);
+
+		return $block;
+	}
+
+	/**
+	 * @param array $args
+	 */
+	private function __construct(array $args)
+	{
+		$this->args = $args;
 	}
 
 	/**
@@ -33,7 +50,7 @@ class Block extends \Nette\Object
 	 */
 	public function getHash()
 	{
-		return $this->definition['hash'];
+		return $this->args['hash'];
 	}
 
 	/**
@@ -41,55 +58,57 @@ class Block extends \Nette\Object
 	 */
 	public function getIndex()
 	{
-		return $this->definition['block_index'];
+		return $this->args['block_index'];
 	}
 
 	/**
+	 * The hash value of the previous block this particular block references 
+	 * 
 	 * @return string
 	 */
 	public function getPreviousBlockHash()
 	{
-		return $this->definition['prev_block'];
+		return $this->args['prev_block'];
 	}
 
 	/**
+	 * The reference to a Merkle tree collection which is a hash of all transactions related to this block 
+	 * 
 	 * @return string
 	 */
 	public function getMerkleRoot()
 	{
-		return $this->definition['mrkl_root'];
+		return $this->args['mrkl_root'];
 	}
 
 	/**
+	 * A datetime recording when this block was created
+	 * 
 	 * @return DateTime
 	 */
 	public function getTime()
 	{
-		return $this->definition['time'];
+		return $this->args['time'];
 	}
 
 	/**
-	 * @return DateTime
-	 */
-	public function getReceivedTime()
-	{
-		return $this->definition['received_time'];
-	}
-
-	/**
-	 * @return string
+	 * The calculated difficulty target being used for this block
+	 * 
+	 * @return int
 	 */
 	public function getBits()
 	{
-		return $this->definition['bits'];
+		return $this->args['bits'];
 	}
 
 	/**
-	 * @return string
+	 * The nonce used to generate this block… to allow variations of the header and compute different hashes
+	 * 
+	 * @return int
 	 */
 	public function getNonce()
 	{
-		return $this->definition['nonce'];
+		return $this->args['nonce'];
 	}
 
 	/**
@@ -97,7 +116,7 @@ class Block extends \Nette\Object
 	 */
 	public function getSize()
 	{
-		return (int) $this->definition['size'];
+		return $this->args['size'];
 	}
 
 	/**
@@ -105,7 +124,7 @@ class Block extends \Nette\Object
 	 */
 	public function getHeight()
 	{
-		return (int) $this->definition['height'];
+		return $this->args['height'];
 	}
 
 	/**
@@ -113,7 +132,7 @@ class Block extends \Nette\Object
 	 */
 	public function isMainChain()
 	{
-		return (bool) $this->definition['main_chain'];
+		return $this->args['main_chain'];
 	}
 
 	/**
@@ -121,22 +140,24 @@ class Block extends \Nette\Object
 	 */
 	public function getRelayedBy()
 	{
-		return $this->definition['relayed_by'];
+		return $this->args['relayed_by'];
 	}
 
 	/**
+	 * Block version information, based upon the software version creating this block 
+	 * 
 	 * @return int
 	 */
-	public function getVer()
+	public function getVersion()
 	{
-		return (int) $this->definition['ver'];
+		return $this->args['ver'];
 	}
 
 	/**
-	 * @return array
+	 * @return Transaction[]
 	 */
 	public function getTransactions()
 	{
-		return $this->definition['tx'];
+		return $this->transactions;
 	}
 }

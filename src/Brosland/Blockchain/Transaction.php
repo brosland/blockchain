@@ -6,69 +6,58 @@ use DateTime;
 
 class Transaction extends \Nette\Object
 {
-	/**
-	 * @var string
-	 */
-	private $hash;
-	/**
-	 * @var string
-	 */
-	private $index;
-	/**
-	 * @var DateTime
-	 */
-	private $lockTime;
-	/**
-	 * @var int
-	 */
-	private $size;
-	/**
-	 * @var string
-	 */
-	private $relayedBy;
-	/**
-	 * @var int
-	 */
-	private $blockHeight;
-	/**
-	 * @var int
-	 */
-	private $ver;
-	/**
-	 * @var array
-	 */
-	private $inputs;
-	/**
-	 * @var array
-	 */
-	private $outputs;
+	const MIN_LOCK_TIME = 500000000;
 
 
 	/**
-	 * Returns new instance of Address created from responce of https://blockchain.info/address/$address?format=json
+	 * @var array
+	 */
+	private $args;
+	/**
+	 * @var array
+	 */
+	private $inputs = array ();
+	/**
+	 * @var array
+	 */
+	private $outputs = array ();
+
+
+	/**
+	 * Returns new instance of Transaction created from responce of https://blockchain.info/address/$address?format=json
 	 * @param array $args
 	 * @return Transaction
 	 */
 	public static function createFromArray($args)
 	{
-		$transaction = new Transaction();
-		$transaction->hash = $args['hash'];
-		$transaction->index = $args['tx_index'];
-		$transaction->lockTime = is_int($args['lock_time']) ?
-			DateTime::createFromFormat('U', $args['lock_time']) : NULL;
-		$transaction->size = (int) $args['size'];
-		$transaction->relayedBy = $args['relayed_by'];
-		$transaction->blockHeight = (int) $args['block_height'];
-		$transaction->ver = (int) $args['ver'];
-		$transaction->inputs = $args['inputs'];
-		$transaction->outputs = $args['out'];
+		$args['lock_time'] >= self::MIN_LOCK_TIME ?
+				DateTime::createFromFormat('U', $args['lock_time']) : NULL;
+
+		$transaction = new Transaction($args);
+
+		foreach ($transaction->args['inputs'] as $input)
+		{
+			$transaction->inputs[] = TransactionInput::createFromArray($input);
+		}
+
+		unset($transaction->args['inputs']);
+
+		foreach ($transaction->args['out'] as $output)
+		{
+			$transaction->outputs[] = TransactionOutput::createFromArray($output);
+		}
+
+		unset($transaction->args['out']);
 
 		return $transaction;
 	}
 
-	private function __construct()
+	/**
+	 * @param array $args
+	 */
+	private function __construct(array $args)
 	{
-		
+		$this->args = $args;
 	}
 
 	/**
@@ -76,7 +65,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getHash()
 	{
-		return $this->hash;
+		return $this->args['hash'];
 	}
 
 	/**
@@ -84,15 +73,17 @@ class Transaction extends \Nette\Object
 	 */
 	public function getIndex()
 	{
-		return $this->index;
+		return $this->args['index'];
 	}
 
 	/**
+	 * The block datetime at which this transaction is locked
+	 * 
 	 * @return DateTime
 	 */
 	public function getLockTime()
 	{
-		return $this->lockTime;
+		return $this->args['lock_time'];
 	}
 
 	/**
@@ -100,7 +91,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getSize()
 	{
-		return (int) $this->size;
+		return $this->args['size'];
 	}
 
 	/**
@@ -108,7 +99,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getRelayedBy()
 	{
-		return $this->relayedBy;
+		return $this->args['relayed_by'];
 	}
 
 	/**
@@ -116,14 +107,30 @@ class Transaction extends \Nette\Object
 	 */
 	public function getBlockHeight()
 	{
-		return (int) $this->blockHeight;
+		return $this->args['block_height'];
 	}
 
 	/**
 	 * @return int
 	 */
-	public function getVer()
+	public function getVersion()
 	{
-		return (int) $this->ver;
+		return $this->args['ver'];
+	}
+
+	/**
+	 * @return TransactionInput[]
+	 */
+	public function getInputs()
+	{
+		return $this->inputs;
+	}
+
+	/**
+	 * @return TransactionOutput[]
+	 */
+	public function getOutputs()
+	{
+		return $this->outputs;
 	}
 }
