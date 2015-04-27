@@ -30,6 +30,7 @@ class Transaction extends \Nette\Object
 	 */
 	public static function createFromArray($args)
 	{
+		$args['time'] = DateTime::createFromFormat('U', $args['time']);
 		$args['lock_time'] >= self::MIN_LOCK_TIME ?
 				DateTime::createFromFormat('U', $args['lock_time']) : NULL;
 
