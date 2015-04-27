@@ -7,28 +7,68 @@ use DateTime;
 class Transaction extends \Nette\Object
 {
 	/**
+	 * @var string
+	 */
+	private $hash;
+	/**
+	 * @var string
+	 */
+	private $index;
+	/**
+	 * @var DateTime
+	 */
+	private $lockTime;
+	/**
+	 * @var int
+	 */
+	private $size;
+	/**
+	 * @var string
+	 */
+	private $relayedBy;
+	/**
+	 * @var int
+	 */
+	private $blockHeight;
+	/**
+	 * @var int
+	 */
+	private $ver;
+	/**
 	 * @var array
 	 */
-	private $definition;
+	private $inputs;
+	/**
+	 * @var array
+	 */
+	private $outputs;
 
 
 	/**
-	 * @param array $definition
+	 * Returns new instance of Address created from responce of https://blockchain.info/address/$address?format=json
+	 * @param array $args
+	 * @return Transaction
 	 */
-	public function __construct(array $definition)
+	public static function createFromArray($args)
 	{
-		$this->definition = $definition;
+		$transaction = new Transaction();
+		$transaction->hash = $args['hash'];
+		$transaction->index = $args['tx_index'];
+		$transaction->lockTime = is_int($args['lock_time']) ?
+			DateTime::createFromFormat('U', $args['lock_time']) : NULL;
+		$transaction->size = (int) $args['size'];
+		$transaction->relayedBy = $args['relayed_by'];
+		$transaction->blockHeight = (int) $args['block_height'];
+		$transaction->ver = (int) $args['ver'];
+		$transaction->inputs = $args['inputs'];
+		$transaction->outputs = $args['out'];
 
-		if (is_int($definition['lock_time']))
-		{
-			$lockTime = new DateTime();
-			$lockTime->setTimestamp($definition['lock_time']);
-			$this->definition['lock_time'] = $lockTime;
-		}
-		else
-		{
-			$this->definition['lock_time'] = NULL;
-		}
+		return $transaction;
+	}
+
+	private function __construct()
+	{
+		
 	}
 
 	/**
@@ -36,7 +76,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getHash()
 	{
-		return $this->definition['hash'];
+		return $this->hash;
 	}
 
 	/**
@@ -44,7 +84,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getIndex()
 	{
-		return $this->definition['tx_index'];
+		return $this->index;
 	}
 
 	/**
@@ -52,7 +92,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getLockTime()
 	{
-		return $this->definition['lock_time'];
+		return $this->lockTime;
 	}
 
 	/**
@@ -60,7 +100,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getSize()
 	{
-		return (int) $this->definition['size'];
+		return (int) $this->size;
 	}
 
 	/**
@@ -68,7 +108,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getRelayedBy()
 	{
-		return $this->definition['relayed_by'];
+		return $this->relayedBy;
 	}
 
 	/**
@@ -76,7 +116,7 @@ class Transaction extends \Nette\Object
 	 */
 	public function getBlockHeight()
 	{
-		return (int) $this->definition['block_height'];
+		return (int) $this->blockHeight;
 	}
 
 	/**
@@ -84,6 +124,6 @@ class Transaction extends \Nette\Object
 	 */
 	public function getVer()
 	{
-		return (int) $this->definition['ver'];
+		return (int) $this->ver;
 	}
 }

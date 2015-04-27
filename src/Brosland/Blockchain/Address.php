@@ -29,10 +29,6 @@ class Address extends \Nette\Object
 	 */
 	private $totalSent = NULL;
 	/**
-	 * @var int
-	 */
-	private $unredeemed = NULL;
-	/**
 	 * @var array
 	 */
 	private $transactions = NULL;
@@ -40,16 +36,24 @@ class Address extends \Nette\Object
 
 	/**
 	 * Returns new instance of Address created from responce of https://blockchain.info/address/$address?format=json
-	 * @param array|\Nette\Utils\ArrayHash $definition
+	 * @param array $args
 	 * @return Address
 	 */
-	public static function createFromArray($definition)
+	public static function createFromArray($args)
 	{
-		$address = new Address($definition['address'], $definition['final_balance'], $definition['total_received']);
-		$address->setHash160($definition['hash160'])
-			->setUnredeemed($definition['n_unredeemed'])
-			->setTotalSent($definition['total_sent'])
-			->setTransactions($definition['txs']);
+		$address = new Address($args['address'], $args['final_balance'],
+			$args['total_received']);
+		$address->setHash160($args['hash160'])
+			->setTotalSent($args['total_sent']);
+
+		$transactions = array ();
+
+		foreach ($args['txs'] as $txArgs)
+		{
+			$transactions[$txArgs['hash']] = Transaction::createFromArray($txArgs);
+		}
+
+		$address->setTransactions($transactions);
 
 		return $address;
 	}
@@ -143,25 +147,6 @@ class Address extends \Nette\Object
 	public function setTotalSent($totalSent)
 	{
 		$this->totalSent = $totalSent;
-
-		return $this;
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getUnredeemed()
-	{
-		return $this->unredeemed;
-	}
-
-	/**
-	 * @param int $unredeemed
-	 * @return self
-	 */
-	public function setUnredeemed($unredeemed)
-	{
-		$this->unredeemed = $unredeemed;
 
 		return $this;
 	}
