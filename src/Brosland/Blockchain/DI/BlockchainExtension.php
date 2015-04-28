@@ -81,7 +81,7 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 
 		foreach ($wallets as $name => $wallet)
 		{
-			$serviceName = $this->prefix($name . '.wallet');
+			$serviceName = $this->prefix('wallet.' . $name);
 
 			$service = $builder->addDefinition($serviceName)
 				->setClass(\Brosland\Blockchain\Wallet::class)
