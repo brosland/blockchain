@@ -34,10 +34,6 @@ class Wallet extends \Nette\Object
 	 * @var int
 	 */
 	private $minConfirmations = 0;
-	/**
-	 * @var bool
-	 */
-	private $debugMode = FALSE;
 
 
 	/**
@@ -67,16 +63,6 @@ class Wallet extends \Nette\Object
 	public function setMinConfirmations($minConfirmations)
 	{
 		$this->minConfirmations = $minConfirmations;
-
-		return $this;
-	}
-
-	/**
-	 * @param bool $debugMode
-	 */
-	public function setDebugMode($debugMode)
-	{
-		$this->debugMode = $debugMode;
 
 		return $this;
 	}
@@ -229,11 +215,6 @@ class Wallet extends \Nette\Object
 		if (isset($jsonResponse->error))
 		{
 			throw new BlockchainException($jsonResponse->error);
-		}
-
-		if ($this->debugMode)
-		{
-			dump($response);
 		}
 
 		return $jsonResponse;
