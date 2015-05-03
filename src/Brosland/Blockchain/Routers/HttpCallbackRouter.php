@@ -2,21 +2,21 @@
 
 namespace Brosland\Blockchain\Routers;
 
-use Nette\Http\Url,
+use Nette\Application\Request,
 	Nette\Application\Routers\Route,
 	Nette\Http\IRequest,
-	Nette\Application\Request;
+	Nette\Http\Url;
 
-class CallbackRouter extends \Nette\Object implements \Nette\Application\IRouter
+class HttpCallbackRouter extends \Nette\Object implements \Nette\Application\IRouter
 {
+	/**
+	 * @var array
+	 */
+	public $onReceived = [];
 	/**
 	 * @var Route
 	 */
 	private $route;
-	/**
-	 * @var array
-	 */
-	public $onCallback = array ();
 
 
 	/**
@@ -24,20 +24,17 @@ class CallbackRouter extends \Nette\Object implements \Nette\Application\IRouter
 	 */
 	public function __construct($mask)
 	{
-		$this->route = new Route($mask, function ()
+		$this->route = new Route($mask, function (IRequest $request)
 		{
-			$this->onCallback();
+			$notification = new \Brosland\Blockchain\HttpCallback($request);
 
-			return new \Nette\Application\Responses\TextResponse('*ok*');
+			$this->onReceived($notification);
+
+			if ($notification->isAllowedToSendOkResponse())
+			{
+				return new \Nette\Application\Responses\TextResponse('*ok*');
+			}
 		});
-	}
-
-	/**
-	 * @param callable $callback
-	 */
-	public function addCallback($callback)
-	{
-		$this->onCallback[] = $callback;
 	}
 
 	/**
@@ -61,18 +58,6 @@ class CallbackRouter extends \Nette\Object implements \Nette\Application\IRouter
 	 */
 	public function constructUrl(Request $appRequest, Url $refUrl)
 	{
-		$url = $this->route->constructUrl($appRequest, $refUrl);
-
-		if ($url !== NULL)
-		{
-			if (is_string($url))
-			{
-				$url = new Url($url);
-			}
-
-			$url->setQuery('')->canonicalize();
-		}
-
-		return $url;
+		return $this->route->constructUrl($appRequest, $refUrl);
 	}
 }

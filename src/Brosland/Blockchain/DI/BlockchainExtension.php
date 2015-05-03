@@ -4,21 +4,18 @@ namespace Brosland\Blockchain\DI;
 
 class BlockchainExtension extends \Nette\DI\CompilerExtension
 {
-	const TAG_HTTP_CALLBACK = 'brosland.blockchain.httpCallback';
-
-
 	/**
 	 * @var array
 	 */
-	private static $DEFAULTS = array (
-		'wallet' => array (
+	private static $DEFAULTS = [
+		'wallet' => [
 			'id' => NULL,
 			'password' => NULL,
 			'password2' => NULL
-		),
+		],
 		'minConfirmations' => 50,
-		'callbackRouterMask' => 'blockchain-callback'
-	);
+		'httpCallbackRoute' => 'blockchain-callback'
+	];
 
 
 	public function loadConfiguration()
@@ -37,29 +34,14 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 		}
 
 		$router = $builder->addDefinition($this->prefix('router'))
-			->setClass(\Brosland\Blockchain\Routers\CallbackRouter::class)
-			->setArguments(array ($config['callbackRouterMask']))
+			->setClass(\Brosland\Blockchain\Routers\HttpCallbackRouter::class)
+			->setArguments(array ($config['httpCallbackRoute']))
 			->setAutowired(FALSE);
 
 		if ($builder->hasDefinition('router'))
 		{
 			$builder->getDefinition('router')
 				->addSetup('offsetSet', array (NULL, $router));
-		}
-	}
-
-	public function beforeCompile()
-	{
-		parent::beforeCompile();
-
-		$builder = $this->getContainerBuilder();
-
-		$router = $builder->getDefinition($this->prefix('router'));
-		$services = array_keys($builder->findByTag(self::TAG_HTTP_CALLBACK));
-
-		foreach ($services as $serviceName)
-		{
-			$router->addSetup('addCallback', array ($builder->getDefinition($serviceName)));
 		}
 	}
 

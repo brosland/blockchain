@@ -4,32 +4,16 @@ namespace Brosland\Blockchain;
 
 use Nette\Http\IRequest;
 
-abstract class HttpCallback extends \Nette\Object
+class HttpCallback extends \Nette\Object
 {
 	/**
 	 * @var IRequest
 	 */
-	protected $request;
-	/**
-	 * @var string $transactionHash
-	 */
-	protected $transactionHash = NULL;
-	/**
-	 * @var int
-	 */
-	protected $value = NULL;
-	/**
-	 * @var string
-	 */
-	protected $inputAddress = NULL;
-	/**
-	 * @var int
-	 */
-	protected $confirmations = NULL;
+	private $request;
 	/**
 	 * @var bool
 	 */
-	protected $test = NULL;
+	private $sendOkResponse = TRUE;
 
 
 	/**
@@ -40,16 +24,69 @@ abstract class HttpCallback extends \Nette\Object
 		$this->request = $request;
 	}
 
-	public function __invoke()
+	/**
+	 * @return IRequest
+	 */
+	public function getRequest()
 	{
-		$this->transactionHash = $this->request->getQuery('transaction_hash');
-		$this->value = $this->request->getQuery('value');
-		$this->inputAddress = $this->request->getQuery('input_address');
-		$this->confirmations = $this->request->getQuery('confirmations');
-		$this->test = $this->request->getQuery('test', FALSE);
-
-		$this->onCallback();
+		return $this->request;
 	}
 
-	public abstract function onCallback();
+	/**
+	 * @return string
+	 */
+	public function getTransactionHash()
+	{
+		return $this->request->getQuery('transaction_hash');
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getValue()
+	{
+		return $this->request->getQuery('value');
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getInputAddress()
+	{
+		return $this->request->getQuery('input_address');
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getConfirmations()
+	{
+		return (int) $this->request->getQuery('confirmations');
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isTest()
+	{
+		return (bool) $this->request->getQuery('test', FALSE);
+	}
+
+	/**
+	 * @return bool
+	 */
+	public function isAllowedToSendOkResponse()
+	{
+		return $this->sendOkResponse;
+	}
+
+	/**
+	 * @return self
+	 */
+	public function denyToSendOkResponse()
+	{
+		$this->sendOkResponse = FALSE;
+
+		return $this;
+	}
 }
