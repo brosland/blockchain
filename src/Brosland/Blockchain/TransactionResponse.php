@@ -7,6 +7,10 @@ class TransactionResponse extends \Nette\Object
 	/**
 	 * @var array
 	 */
+	private static $REQUIRED = ['message', 'tx_hash'];
+	/**
+	 * @var array
+	 */
 	private $response;
 
 
@@ -15,6 +19,8 @@ class TransactionResponse extends \Nette\Object
 	 */
 	public function __construct($response)
 	{
+		Utils::checkRequiredFields(self::$REQUIRED, $response);
+
 		$this->response = $response;
 	}
 

@@ -17,6 +17,10 @@ class Currency extends \Nette\Object
 	/**
 	 * @var array
 	 */
+	private static $REQUIRED = ['code', 'last', '15m', 'buy', 'sell'];
+	/**
+	 * @var array
+	 */
 	private $currency;
 
 
@@ -25,6 +29,8 @@ class Currency extends \Nette\Object
 	 */
 	public function __construct($currency)
 	{
+		Utils::checkRequiredFields(self::$REQUIRED, $currency);
+
 		$this->currency = $currency;
 	}
 

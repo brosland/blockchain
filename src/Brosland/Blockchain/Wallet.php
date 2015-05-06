@@ -86,7 +86,8 @@ class Wallet extends \Nette\Object
 	{
 		if ($this->balance === NULL || $preferSource)
 		{
-			$this->balance = $this->sendRequest('balance')['balance'];
+			$response = $this->sendRequest('balance');
+			$this->balance = $response['balance'];
 		}
 
 		return $this->balance;
@@ -138,7 +139,9 @@ class Wallet extends \Nette\Object
 	 */
 	public function addAddress($label = NULL)
 	{
-		return $this->sendRequest('new_address', ['label' => $label])['address'];
+		$response = $this->sendRequest('new_address', ['label' => $label]);
+
+		return $response['address'];
 	}
 
 	/**
