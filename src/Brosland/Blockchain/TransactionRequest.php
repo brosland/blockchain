@@ -11,9 +11,9 @@ class TransactionRequest extends \Nette\Object
 	/**
 	 * @var array
 	 */
-	private $recipients = array ();
+	private $recipients = [];
 	/**
-	 * @var int
+	 * @var string
 	 */
 	private $fee = 0;
 	/**
@@ -51,7 +51,7 @@ class TransactionRequest extends \Nette\Object
 
 	/**
 	 * @param string $address
-	 * @param int $amount In Satoshi.
+	 * @param string $amount
 	 * @return self
 	 */
 	public function addTo($address, $amount)
@@ -77,7 +77,7 @@ class TransactionRequest extends \Nette\Object
 	}
 
 	/**
-	 * @return int
+	 * @return string
 	 */
 	public function getFee()
 	{
@@ -87,7 +87,7 @@ class TransactionRequest extends \Nette\Object
 	/**
 	 * Transaction fee value in Satoshi (must be greater than default fee).
 	 * 
-	 * @param int $fee
+	 * @param string $fee
 	 * @return self
 	 */
 	public function setFee($fee)

@@ -2,14 +2,12 @@
 
 namespace Brosland\Blockchain;
 
-use Kdyby\Curl\Request,
+use Kdyby\Curl\CurlSender,
+	Kdyby\Curl\Request,
 	Nette\Utils\Json;
 
 class Wallet extends \Nette\Object
 {
-	const BASE_URL = 'https://blockchain.info/merchant';
-
-
 	/**
 	 * @var string
 	 */
@@ -25,15 +23,23 @@ class Wallet extends \Nette\Object
 	/**
 	 * @var Address[]
 	 */
-	private $addresses = array ();
+	private $addresses = [];
 	/**
-	 * @var int
+	 * @var string
 	 */
 	private $balance = NULL;
 	/**
 	 * @var int
 	 */
 	private $minConfirmations = 0;
+	/**
+	 * @var string
+	 */
+	private $baseUrl;
+	/**
+	 * @var CurlSender
+	 */
+	private $sender;
 
 
 	/**
@@ -46,6 +52,11 @@ class Wallet extends \Nette\Object
 		$this->id = $id;
 		$this->password = $password;
 		$this->password2 = $password2;
+		$this->baseUrl = Blockchain::URL . '/merchant';
+
+		$this->sender = new CurlSender();
+		$this->sender->headers['Content-Type'] = 'application/x-www-form-urlencoded';
+		$this->sender->options['CAINFO'] = __DIR__ . '/certificates/cacert.pem';
 	}
 
 	/**
@@ -68,13 +79,14 @@ class Wallet extends \Nette\Object
 	}
 
 	/**
-	 * @return int
+	 * @param bool $preferSource
+	 * @return string
 	 */
 	public function getBalance($preferSource = FALSE)
 	{
 		if ($this->balance === NULL || $preferSource)
 		{
-			$this->balance = $this->sendRequest('balance')->balance;
+			$this->balance = $this->sendRequest('balance')['balance'];
 		}
 
 		return $this->balance;
@@ -88,18 +100,12 @@ class Wallet extends \Nette\Object
 	{
 		if (empty($this->addresses) || $preferSource)
 		{
-			$response = $this->sendRequest('list', array (
-				'confirmations' => $this->minConfirmations
-			));
+			$response = $this->sendRequest('list', ['confirmations' => $this->minConfirmations]);
+			$this->addresses = [];
 
-			$this->addresses = array ();
-
-			foreach ($response->addresses as $data)
+			foreach ($response['addresses'] as $address)
 			{
-				$address = new Address($data->address, $data->balance, $data->total_received);
-				$address->setLabel($data->label);
-
-				$this->addresses[$data->address] = $address;
+				$this->addresses[$address['address']] = new Address($address);
 			}
 		}
 
@@ -107,24 +113,23 @@ class Wallet extends \Nette\Object
 	}
 
 	/**
-	 * @param string $addressId
+	 * @param string $address
 	 * @param bool $preferSource
 	 * @return Address
 	 */
-	public function getAddress($addressId, $preferSource = FALSE)
+	public function getAddress($address, $preferSource = FALSE)
 	{
-		if (!isset($this->addresses[$addressId]) || $preferSource)
+		if (!isset($this->addresses[$address]) || $preferSource)
 		{
-			$response = $this->sendRequest('address_balance', array (
-				'address' => $addressId,
+			$response = $this->sendRequest('address_balance', [
+				'address' => $address,
 				'confirmations' => $this->minConfirmations
-			));
+			]);
 
-			$address = new Address($addressId, $response->balance, $response->total_received);
-			$this->addresses[$addressId] = $address;
+			$this->addresses[$address] = new Address($response);
 		}
 
-		return $this->addresses[$addressId];
+		return $this->addresses[$address];
 	}
 
 	/**
@@ -133,25 +138,18 @@ class Wallet extends \Nette\Object
 	 */
 	public function addAddress($label = NULL)
 	{
-		$response = $this->sendRequest('new_address', array ('label' => $label));
-
-		$address = new Address($response->address);
-		$address->setLabel($label);
-
-		$this->addresses[$response->address] = $address;
-
-		return $address;
+		return $this->sendRequest('new_address', ['label' => $label])['address'];
 	}
 
 	/**
-	 * @param string $addressId
+	 * @param string $address
 	 * @param bool $archived
 	 */
-	public function setAddressArchived($addressId, $archived = TRUE)
+	public function setAddressArchived($address, $archived = TRUE)
 	{
 		$part = ($archived ? '' : 'un') . 'archive_address';
 
-		$this->sendRequest($part, array ('address' => $addressId));
+		$this->sendRequest($part, ['address' => $address]);
 	}
 
 	/**
@@ -161,9 +159,9 @@ class Wallet extends \Nette\Object
 	 */
 	public function consolidateAddresses($term = 60)
 	{
-		$response = $this->sendRequest('auto_consolidate', array ('days' => $term));
+		$response = $this->sendRequest('auto_consolidate', ['days' => $term]);
 
-		return $response->consolidated;
+		return $response['consolidated'];
 	}
 
 	/**
@@ -175,48 +173,49 @@ class Wallet extends \Nette\Object
 	{
 		if (count($transaction->getRecipients()) == 0)
 		{
-			throw new \Nette\InvalidArgumentException('Please add at least one recipient.');
+			throw new \Nette\InvalidArgumentException('Recipient not found.');
 		}
 
-		$parameters = array (
+		$parameters = [
 			'recipients' => Json::encode($transaction->getRecipients()),
 			'from' => $transaction->getFrom(),
 			'note' => $transaction->getNote(),
 			'fee' => $transaction->getFee() > 0 ? $transaction->getFee() : NULL
-		);
+		];
 
-		$response = $this->sendRequest('sendmany', $parameters);
-
-		return new TransactionResponse($response->message, $response->tx_hash);
+		return new TransactionResponse($this->sendRequest('sendmany', $parameters));
 	}
 
 	/**
 	 * @param string $endpoint
 	 * @param array $parameters
-	 * @return Json
+	 * @return array
 	 */
-	private function sendRequest($endpoint = '', $parameters = array ())
+	private function sendRequest($endpoint, array $parameters = [])
 	{
-		$url = self::BASE_URL . '/' . $this->id . '/' . $endpoint;
-		$get = array_merge($parameters, array (
+		$url = $this->baseUrl . '/' . $this->id . '/' . $endpoint;
+		$query = array_merge($parameters, [
 			'password' => $this->password,
 			'second_password' => $this->password2
-		));
+		]);
 
-		$request = new Request($url);
-		$request->headers['Content-Type'] = 'application/x-www-form-urlencoded';
-		$request->options['CONNECTTIMEOUT'] = 30;
-		$request->options['TIMEOUT'] = 60;
-		$request->options['CAINFO'] = __DIR__ . '/certificates/cacert.pem';
-
-		$response = $request->get($get);
-		$jsonResponse = Json::decode($response->getResponse());
-
-		if (isset($jsonResponse->error))
+		try
 		{
-			throw new BlockchainException($jsonResponse->error);
-		}
+			$request = new Request($url);
+			$request->setSender($this->sender);
 
-		return $jsonResponse;
+			$response = Json::decode($request->get($query)->getResponse(), Json::FORCE_ARRAY);
+
+			if (isset($response['error']))
+			{
+				throw new BlockchainException($response['error']);
+			}
+
+			return $response;
+		}
+		catch (\Kdyby\Curl\CurlException $ex)
+		{
+			throw new BlockchainException($ex->getResponse()->getResponse());
+		}
 	}
 }

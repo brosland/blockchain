@@ -2,80 +2,67 @@
 
 namespace Brosland\Blockchain;
 
-use Kdyby\Curl\Request,
+use Kdyby\Curl\CurlSender,
+	Kdyby\Curl\Request,
+	Nette\DI\Container,
 	Nette\Utils\Json;
 
 class Blockchain extends \Nette\Object
 {
-	const BASE_URL = 'https://blockchain.info';
+	const URL = 'https://blockchain.info';
 
 
 	/**
-	 * @var Wallet[]
+	 * @var Container
 	 */
-	private $wallets = array ();
-
-
+	private $serviceLocator;
 	/**
-	 * @param string $name
-	 * @param Wallet $wallet
-	 * @return self
+	 * @var array
 	 */
-	public function addWallet($name, Wallet $wallet)
+	private $serviceMap = [];
+	/**
+	 * @var CurlSender
+	 */
+	private $sender;
+
+
+	public function __construct()
 	{
-		$this->wallets[$name] = $wallet;
-
-		return $this;
+		$this->sender = new CurlSender();
+		$this->sender->headers['Content-Type'] = 'application/x-www-form-urlencoded';
+		$this->sender->options['CAINFO'] = __DIR__ . '/certificates/cacert.pem';
 	}
 
 	/**
 	 * @param string $name
 	 * @return Wallet
-	 * @throws \Nette\ArgumentOutOfRangeException
 	 */
 	public function getWallet($name)
 	{
-		if (!isset($this->wallets[$name]))
+		if (!isset($this->serviceMap[$name]))
 		{
-			throw new \Nette\ArgumentOutOfRangeException('Wallet not found.');
+			throw new \Nette\InvalidArgumentException("Unknown wallet {$name}.");
 		}
 
-		return $this->wallets[$name];
+		return $this->serviceLocator->getService($this->serviceMap[$name]);
 	}
 
 	/**
-	 * @param string $hash
-	 * @return Block
+	 * @internal
+	 * @param array $wallets
 	 */
-	public function getBlock($hash)
+	public function injectServiceMap(array $wallets)
 	{
-		return Block::createFromArray($this->sendRequest('rawblock/' . $hash));
+		$this->serviceMap = $wallets;
 	}
 
 	/**
-	 * @param string $hash
-	 * @return Transaction
+	 * @internal
+	 * @param Container $serviceLocator
 	 */
-	public function getTransaction($hash)
+	public function injectServiceLocator(Container $serviceLocator)
 	{
-		return Transaction::createFromArray($this->sendRequest('rawtx/' . $hash));
-	}
-
-	/**
-	 * @param string $hash
-	 * @param int $transactionsLimit
-	 * @param int $transactionsOffset
-	 * @return Address
-	 */
-	public function getAddress($hash, $transactionsLimit = NULL,
-		$transactionsOffset = NULL)
-	{
-		$response = $this->sendRequest('address/' . $hash, array (
-			'limit' => $transactionsLimit,
-			'offset' => $transactionsOffset
-		));
-
-		return Address::createFromArray($response);
+		$this->serviceLocator = $serviceLocator;
 	}
 
 	/**
@@ -83,79 +70,16 @@ class Blockchain extends \Nette\Object
 	 */
 	public function getTicker()
 	{
-		$response = $this->sendRequest('ticker');
-		$currencies = array ();
+		$request = new Request(self::URL . '/ticker');
+		$response = Json::decode($this->sender->send($request)->getResponse(), Json::FORCE_ARRAY);
+		$currencies = [];
 
-		foreach ($response as $code => $values)
+		foreach ($response as $code => $currency)
 		{
-			$currency = new Currency($code, $values->last);
-			$currency->setValue15m($values->value15m)
-				->setValueBuy($values->valueBuy)
-				->setValueSell($values->valueSell);
-
-			$currencies[$code] = $currency;
+			$currency['code'] = $code;
+			$currencies[$code] = new Currency($currency);
 		}
 
 		return $currencies;
-	}
-
-	/**
-	 * @param string $code
-	 * @param double $value
-	 * @throws \Nette\InvalidArgumentException
-	 */
-	public function convertToBitcoins($code, $value = 1.0)
-	{
-		if (!Currency::validate($code))
-		{
-			throw new \Nette\InvalidArgumentException('Currency not found.');
-		}
-
-		return $this->sendRequest('tobtc', array ('currency' => $code, 'value' => $value), FALSE);
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getBlockCount()
-	{
-		return (int) $this->sendRequest('q/getblockcount', NULL, FALSE);
-	}
-
-	/**
-	 * @param string $endpoint
-	 * @param array $parameters
-	 * @param bool $jsonResponse
-	 * @return mixed
-	 */
-	private function sendRequest($endpoint = '', $parameters = array (),
-		$jsonResponse = TRUE)
-	{
-		if ($jsonResponse)
-		{
-			$parameters['format'] = 'json';
-		}
-
-		$request = new Request(self::BASE_URL . '/' . $endpoint);
-		$request->headers['Content-Type'] = 'application/x-www-form-urlencoded';
-		$request->options['CONNECTTIMEOUT'] = 30;
-		$request->options['TIMEOUT'] = 60;
-		$request->options['CAINFO'] = __DIR__ . '/certificates/cacert.pem';
-
-		$response = $request->get($parameters);
-
-		if ($jsonResponse)
-		{
-			try
-			{
-				return Json::decode($response->getResponse(), Json::FORCE_ARRAY);
-			}
-			catch (\Nette\Utils\JsonException $ex)
-			{
-				throw new BlockchainException($response->getResponse());
-			}
-		}
-
-		return $response->getResponse();
 	}
 }

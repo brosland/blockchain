@@ -25,63 +25,59 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig(self::$DEFAULTS);
 
-		$blockchain = $builder->addDefinition($this->prefix('blockchain'))
-			->setClass(\Brosland\Blockchain\Blockchain::class);
+		$wallets = $this->loadWallets($config['wallet']);
 
-		foreach ($this->loadWallets($config['wallet']) as $name => $wallet)
-		{
-			$blockchain->addSetup('addWallet', array ($name, $wallet));
-		}
+		$builder->addDefinition($this->prefix('blockchain'))
+			->setClass(\Brosland\Blockchain\Blockchain::class)
+			->addSetup('injectServiceLocator')
+			->addSetup('injectServiceMap', [$wallets]);
 
 		$router = $builder->addDefinition($this->prefix('router'))
 			->setClass(\Brosland\Blockchain\Routers\HttpCallbackRouter::class)
-			->setArguments(array ($config['httpCallbackRoute']))
+			->setArguments([$config['httpCallbackRoute']])
 			->setAutowired(FALSE);
 
 		if ($builder->hasDefinition('router'))
 		{
 			$builder->getDefinition('router')
-				->addSetup('offsetSet', array (NULL, $router));
+				->addSetup('offsetSet', [NULL, $router]);
 		}
 	}
 
 	/**
-	 * @param array $wallets
-	 * @return \Nette\DI\ServiceDefinition[]
+	 * @param array $definitions
+	 * @return array
 	 */
-	private function loadWallets($wallets)
+	private function loadWallets($definitions)
 	{
-		if (isset($wallets['id']))
+		if (isset($definitions['id']))
 		{
-			$wallets = array ('default' => $wallets);
+			$definitions = ['default' => $definitions];
 		}
 
 		$builder = $this->getContainerBuilder();
-		$config = $this->getConfig(self::$DEFAULTS);
+		$wallets = [];
 
-		$services = array ();
-
-		foreach ($wallets as $name => $wallet)
+		foreach ($definitions as $name => $wallet)
 		{
 			$serviceName = $this->prefix('wallet.' . $name);
 
-			$service = $builder->addDefinition($serviceName)
-				->setClass(\Brosland\Blockchain\Wallet::class)
-				->setArguments(array (
+			$service = $builder->addDefinition($serviceName);
+			$service->setClass(\Brosland\Blockchain\Wallet::class)
+				->setArguments([
 					$wallet['id'],
 					$wallet['password'],
 					$wallet['password2']
-				))
-				->addSetup('setMinConfirmations', array ($config['minConfirmations']));
+			]);
 
-			if (!empty($services))
+			if (!empty($wallets))
 			{
 				$service->setAutowired(FALSE);
 			}
 
-			$services[$name] = $service;
+			$wallets[$name] = $serviceName;
 		}
 
-		return $services;
+		return $wallets;
 	}
 }
