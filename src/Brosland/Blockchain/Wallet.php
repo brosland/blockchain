@@ -7,7 +7,7 @@ use Kdyby\Curl\Request,
 
 class Wallet extends \Nette\Object
 {
-	const BASE_URL = Blockchain::BASE_URL . '/merchant';
+	const BASE_URL = 'https://blockchain.info/merchant';
 
 
 	/**
