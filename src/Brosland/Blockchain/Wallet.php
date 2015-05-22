@@ -140,8 +140,9 @@ class Wallet extends \Nette\Object
 	public function addAddress($label = NULL)
 	{
 		$response = $this->sendRequest('new_address', ['label' => $label]);
+		$response['balance'] = $response['total_received'] = 0;
 
-		return $response['address'];
+		return new Address($response);
 	}
 
 	/**
