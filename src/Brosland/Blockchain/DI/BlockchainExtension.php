@@ -4,6 +4,7 @@ namespace Brosland\Blockchain\DI;
 
 class BlockchainExtension extends \Nette\DI\CompilerExtension
 {
+
 	/**
 	 * @var array
 	 */
@@ -13,8 +14,7 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 			'password' => NULL,
 			'password2' => NULL
 		],
-		'minConfirmations' => 50,
-		'httpCallbackRoute' => 'blockchain-callback'
+		'minConfirmations' => 3
 	];
 
 
@@ -31,17 +31,6 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 			->setClass(\Brosland\Blockchain\Blockchain::class)
 			->addSetup('injectServiceLocator')
 			->addSetup('injectServiceMap', [$wallets]);
-
-		$router = $builder->addDefinition($this->prefix('router'))
-			->setClass(\Brosland\Blockchain\Routers\HttpCallbackRouter::class)
-			->setArguments([$config['httpCallbackRoute']])
-			->setAutowired(FALSE);
-
-		if ($builder->hasDefinition('router'))
-		{
-			$builder->getDefinition('router')
-				->addSetup('offsetSet', [NULL, $router]);
-		}
 	}
 
 	/**
