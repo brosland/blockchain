@@ -19,6 +19,6 @@
 		"php": ">= 5.5",
 		"ext-intl": "*",
 		"nette/nette": "~2.3",
-		"guzzlehttp/guzzle": "~6.1"
+		"guzzlehttp/guzzle": "~5.2"
 	}
 }
