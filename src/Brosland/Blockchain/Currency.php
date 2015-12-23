@@ -4,6 +4,7 @@ namespace Brosland\Blockchain;
 
 class Currency extends \Nette\Object
 {
+
 	/**
 	 * @var array
 	 */
@@ -21,17 +22,26 @@ class Currency extends \Nette\Object
 	/**
 	 * @var array
 	 */
-	private $currency;
+	private $data;
 
+
+	private function __construct()
+	{
+		
+	}
 
 	/**
-	 * @param array $currency
+	 * @param array $data
+	 * @return Currency
 	 */
-	public function __construct($currency)
+	public static function createFormArray(array $data)
 	{
-		Utils::checkRequiredFields(self::$REQUIRED, $currency);
+		Utils::checkRequiredFields(self::$REQUIRED, $data);
 
-		$this->currency = $currency;
+		$currency = new Currency();
+		$currency->data = $data;
+
+		return $currency;
 	}
 
 	/**
@@ -40,7 +50,7 @@ class Currency extends \Nette\Object
 	 */
 	public function getCode()
 	{
-		return $this->currency['code'];
+		return $this->data['code'];
 	}
 
 	/**
@@ -56,7 +66,7 @@ class Currency extends \Nette\Object
 	 */
 	public function getValue()
 	{
-		return $this->currency['last'];
+		return $this->data['last'];
 	}
 
 	/**
@@ -64,7 +74,7 @@ class Currency extends \Nette\Object
 	 */
 	public function getValue15m()
 	{
-		return $this->currency['15m'];
+		return $this->data['15m'];
 	}
 
 	/**
@@ -72,7 +82,7 @@ class Currency extends \Nette\Object
 	 */
 	public function getValueBuy()
 	{
-		return $this->currency['buy'];
+		return $this->data['buy'];
 	}
 
 	/**
@@ -80,7 +90,7 @@ class Currency extends \Nette\Object
 	 */
 	public function getValueSell()
 	{
-		return $this->currency['sell'];
+		return $this->data['sell'];
 	}
 
 	/**

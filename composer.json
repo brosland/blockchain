@@ -15,10 +15,10 @@
 			"Brosland\\Blockchain\\": "src/"
 		}
 	},
-	"minimum-stability": "dev",
 	"require": {
 		"php": ">= 5.5",
+		"ext-intl": "*",
 		"nette/nette": "~2.3",
-		"kdyby/curl": "~2.2"
+		"guzzlehttp/guzzle": "~6.1"
 	}
 }

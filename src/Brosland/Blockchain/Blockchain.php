@@ -77,7 +77,7 @@ class Blockchain extends \Nette\Object
 		foreach ($response as $code => $currency)
 		{
 			$currency['code'] = $code;
-			$currencies[$code] = new Currency($currency);
+			$currencies[$code] = Currency::createFormArray($currency);
 		}
 
 		return $currencies;

@@ -4,6 +4,7 @@ namespace Brosland\Blockchain;
 
 class TransactionRequest extends \Nette\Object
 {
+
 	/**
 	 * @var string
 	 */
@@ -21,14 +22,6 @@ class TransactionRequest extends \Nette\Object
 	 */
 	private $note = NULL;
 
-
-	/**
-	 * @param string $from Send from a specific Bitcoin Address
-	 */
-	public function __construct($from)
-	{
-		$this->from = $from;
-	}
 
 	/**
 	 * @return string

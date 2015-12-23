@@ -4,6 +4,7 @@ namespace Brosland\Blockchain;
 
 class Address extends \Nette\Object
 {
+
 	/**
 	 * @var array
 	 */
@@ -11,17 +12,26 @@ class Address extends \Nette\Object
 	/**
 	 * @var array
 	 */
-	private $address;
+	private $data;
 
+
+	private function __construct()
+	{
+		
+	}
 
 	/**
-	 * @param array $address
+	 * @param array $data
+	 * @return Address
 	 */
-	public function __construct(array $address)
+	public static function createFromArray(array $data)
 	{
-		Utils::checkRequiredFields(self::$REQUIRED, $address);
+		Utils::checkRequiredFields(self::$REQUIRED, $data);
 
-		$this->address = $address;
+		$address = new Address();
+		$address->data = $data;
+
+		return $address;
 	}
 
 	/**
@@ -29,7 +39,7 @@ class Address extends \Nette\Object
 	 */
 	public function getAddress()
 	{
-		return $this->address['address'];
+		return $this->data['address'];
 	}
 
 	/**
@@ -37,7 +47,7 @@ class Address extends \Nette\Object
 	 */
 	public function getLabel()
 	{
-		return isset($this->address['label']) ? $this->address['label'] : NULL;
+		return isset($this->data['label']) ? $this->data['label'] : NULL;
 	}
 
 	/**
@@ -45,7 +55,7 @@ class Address extends \Nette\Object
 	 */
 	public function getBalance()
 	{
-		return $this->address['balance'];
+		return $this->data['balance'];
 	}
 
 	/**
@@ -53,6 +63,6 @@ class Address extends \Nette\Object
 	 */
 	public function getTotalReceived()
 	{
-		return $this->address['total_received'];
+		return $this->data['total_received'];
 	}
 }

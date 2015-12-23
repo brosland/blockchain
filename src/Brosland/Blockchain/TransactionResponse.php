@@ -4,6 +4,7 @@ namespace Brosland\Blockchain;
 
 class TransactionResponse extends \Nette\Object
 {
+
 	/**
 	 * @var array
 	 */
@@ -11,17 +12,26 @@ class TransactionResponse extends \Nette\Object
 	/**
 	 * @var array
 	 */
-	private $response;
+	private $data;
 
+
+	private function __construct()
+	{
+		
+	}
 
 	/**
-	 * @param string $response
+	 * @param array $data
+	 * @return TransactionResponse
 	 */
-	public function __construct($response)
+	public static function createFromArray(array $data)
 	{
-		Utils::checkRequiredFields(self::$REQUIRED, $response);
+		Utils::checkRequiredFields(self::$REQUIRED, $data);
 
-		$this->response = $response;
+		$response = new TransactionResponse();
+		$response->data = $data;
+
+		return $response;
 	}
 
 	/**
@@ -29,7 +39,7 @@ class TransactionResponse extends \Nette\Object
 	 */
 	public function getMessage()
 	{
-		return $this->response['message'];
+		return $this->data['message'];
 	}
 
 	/**
@@ -37,7 +47,7 @@ class TransactionResponse extends \Nette\Object
 	 */
 	public function getHash()
 	{
-		return $this->response['tx_hash'];
+		return $this->data['tx_hash'];
 	}
 
 	/**
@@ -45,6 +55,6 @@ class TransactionResponse extends \Nette\Object
 	 */
 	public function getNotice()
 	{
-		return isset($this->response['notice']) ? $this->response['notice'] : NULL;
+		return isset($this->data['notice']) ? $this->data['notice'] : NULL;
 	}
 }

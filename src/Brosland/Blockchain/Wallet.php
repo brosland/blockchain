@@ -2,12 +2,12 @@
 
 namespace Brosland\Blockchain;
 
-use Kdyby\Curl\CurlSender,
-	Kdyby\Curl\Request,
+use GuzzleHttp\Client,
 	Nette\Utils\Json;
 
 class Wallet extends \Nette\Object
 {
+
 	/**
 	 * @var string
 	 */
@@ -15,11 +15,7 @@ class Wallet extends \Nette\Object
 	/**
 	 * @var string
 	 */
-	private $password;
-	/**
-	 * @var string
-	 */
-	private $password2;
+	private $password, $password2;
 	/**
 	 * @var Address[]
 	 */
@@ -33,13 +29,9 @@ class Wallet extends \Nette\Object
 	 */
 	private $minConfirmations = 0;
 	/**
-	 * @var string
+	 * @var Client
 	 */
-	private $baseUrl;
-	/**
-	 * @var CurlSender
-	 */
-	private $sender;
+	private $client;
 
 
 	/**
@@ -52,11 +44,12 @@ class Wallet extends \Nette\Object
 		$this->id = $id;
 		$this->password = $password;
 		$this->password2 = $password2;
-		$this->baseUrl = Blockchain::URL . '/merchant';
 
-		$this->sender = new CurlSender();
-		$this->sender->headers['Content-Type'] = 'application/x-www-form-urlencoded';
-		$this->sender->options['CAINFO'] = __DIR__ . '/certificates/cacert.pem';
+		$this->client = new Client([
+			'base_url' => Blockchain::URL . '/merchant/' . $this->id . '/',
+			'Content-Type' => 'application/x-www-form-urlencoded',
+			'CAINFO' => __DIR__ . '/certificates/cacert.pem'
+		]);
 	}
 
 	/**
@@ -106,7 +99,7 @@ class Wallet extends \Nette\Object
 
 			foreach ($response['addresses'] as $address)
 			{
-				$this->addresses[$address['address']] = new Address($address);
+				$this->addresses[$address['address']] = Address::createFromArray($address);
 			}
 		}
 
@@ -123,11 +116,10 @@ class Wallet extends \Nette\Object
 		if (!isset($this->addresses[$address]) || $preferSource)
 		{
 			$response = $this->sendRequest('address_balance', [
-				'address' => $address,
-				'confirmations' => $this->minConfirmations
+				'address' => $address, 'confirmations' => $this->minConfirmations
 			]);
 
-			$this->addresses[$address] = new Address($response);
+			$this->addresses[$address] = Address::createFromArray($response);
 		}
 
 		return $this->addresses[$address];
@@ -142,7 +134,7 @@ class Wallet extends \Nette\Object
 		$response = $this->sendRequest('new_address', ['label' => $label]);
 		$response['balance'] = $response['total_received'] = 0;
 
-		return new Address($response);
+		return Address::createFromArray($response);
 	}
 
 	/**
@@ -169,57 +161,54 @@ class Wallet extends \Nette\Object
 	}
 
 	/**
-	 * @param TransactionRequest $transaction
+	 * @param TransactionRequest $request
 	 * @return TransactionResponse
 	 * @throws \Nette\InvalidArgumentException
 	 */
-	public function transfer(TransactionRequest $transaction)
+	public function transfer(TransactionRequest $request)
 	{
-		if (count($transaction->getRecipients()) == 0)
+		if (count($request->getRecipients()) == 0)
 		{
 			throw new \Nette\InvalidArgumentException('Recipient not found.');
 		}
 
-		$parameters = [
-			'recipients' => Json::encode($transaction->getRecipients()),
-			'from' => $transaction->getFrom(),
-			'note' => $transaction->getNote(),
-			'fee' => $transaction->getFee() > 0 ? $transaction->getFee() : NULL
-		];
+		$parameters = array_filter([
+			'recipients' => Json::encode($request->getRecipients()),
+			'from' => $request->getFrom(),
+			'note' => $request->getNote(),
+			'fee' => $request->getFee() > 0 ? $request->getFee() : NULL
+		]);
 
-		return new TransactionResponse($this->sendRequest('sendmany', $parameters));
+		return TransactionResponse::createFromArray($this->sendRequest('sendmany', $parameters));
 	}
 
 	/**
 	 * @param string $endpoint
 	 * @param array $parameters
 	 * @return array
+	 * @throws BlockchainException
 	 */
 	private function sendRequest($endpoint, array $parameters = [])
 	{
-		$url = $this->baseUrl . '/' . $this->id . '/' . $endpoint;
 		$query = array_merge($parameters, [
-			'password' => $this->password,
-			'second_password' => $this->password2
+			'password' => $this->password, 'second_password' => $this->password2
 		]);
 
 		try
 		{
-			$request = new Request($url);
-			$request->setSender($this->sender);
+			$response = $this->client->get($endpoint, ['query' => $query]);
+			$responceBody = Json::decode($response->getBody(), Json::FORCE_ARRAY);
 
-			$response = Json::decode($request->get($query)->getResponse(), Json::FORCE_ARRAY);
-
-			if (isset($response['error']))
+			if (isset($responceBody['error']))
 			{
-				throw new BlockchainException($response['error']);
+				throw new BlockchainException($responceBody['error']);
 			}
 
-			return $response;
+			return $responceBody;
 		}
-		catch (\Kdyby\Curl\CurlException $ex)
+		catch (\GuzzleHttp\Exception\RequestException $ex)
 		{
-			throw new BlockchainException($ex->getResponse()->getResponse());
+			throw new BlockchainException($ex->getMessage());
 		}
 	}
 }
