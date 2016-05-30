@@ -14,7 +14,9 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 			'password' => NULL,
 			'password2' => NULL
 		],
-		'minConfirmations' => 3
+		'minConfirmations' => 3,
+		'host' => 'localhost',
+		'port' => 3000
 	];
 
 
@@ -25,19 +27,22 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 		$builder = $this->getContainerBuilder();
 		$config = $this->getConfig(self::$DEFAULTS);
 
-		$wallets = $this->loadWallets($config['wallet']);
+		$baseUrl = $config['host'] . ':' . $config['port'];
+		$wallets = $this->loadWallets($config['wallet'], $baseUrl);
 
 		$builder->addDefinition($this->prefix('blockchain'))
 			->setClass(\Brosland\Blockchain\Blockchain::class)
+			->setArguments([$baseUrl])
 			->addSetup('injectServiceLocator')
 			->addSetup('injectServiceMap', [$wallets]);
 	}
 
 	/**
 	 * @param array $definitions
+	 * @param string $baseUrl
 	 * @return array
 	 */
-	private function loadWallets($definitions)
+	private function loadWallets($definitions, $baseUrl)
 	{
 		if (isset($definitions['id']))
 		{
@@ -54,6 +59,7 @@ class BlockchainExtension extends \Nette\DI\CompilerExtension
 			$service = $builder->addDefinition($serviceName);
 			$service->setClass(\Brosland\Blockchain\Wallet::class)
 				->setArguments([
+					$baseUrl,
 					$wallet['id'],
 					$wallet['password'],
 					$wallet['password2']

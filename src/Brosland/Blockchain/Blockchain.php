@@ -21,13 +21,22 @@ class Blockchain extends \Nette\Object
 	 */
 	private $serviceMap = [];
 	/**
+	 * @var string
+	 */
+	private $baseUrl;
+	/**
 	 * @var CurlSender
 	 */
 	private $sender;
 
 
-	public function __construct()
+	/**
+	 * @param string $baseUrl
+	 */
+	public function __construct($baseUrl)
 	{
+		$this->baseUrl = $baseUrl;
+
 		$this->sender = new CurlSender();
 		$this->sender->headers['Content-Type'] = 'application/x-www-form-urlencoded';
 		$this->sender->options['CAINFO'] = __DIR__ . '/certificates/cacert.pem';
@@ -70,7 +79,7 @@ class Blockchain extends \Nette\Object
 	 */
 	public function getTicker()
 	{
-		$request = new Request(self::URL . '/ticker');
+		$request = new Request($this->baseUrl . '/ticker');
 		$response = Json::decode($this->sender->send($request)->getResponse(), Json::FORCE_ARRAY);
 		$currencies = [];
 

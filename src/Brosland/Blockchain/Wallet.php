@@ -11,11 +11,7 @@ class Wallet extends \Nette\Object
 	/**
 	 * @var string
 	 */
-	private $id;
-	/**
-	 * @var string
-	 */
-	private $password, $password2;
+	private $id, $password, $password2;
 	/**
 	 * @var Address[]
 	 */
@@ -35,18 +31,19 @@ class Wallet extends \Nette\Object
 
 
 	/**
+	 * @param string $baseUrl
 	 * @param string $id
 	 * @param string $password
 	 * @param string $password2
 	 */
-	public function __construct($id, $password, $password2 = NULL)
+	public function __construct($baseUrl, $id, $password, $password2 = NULL)
 	{
 		$this->id = $id;
 		$this->password = $password;
 		$this->password2 = $password2;
 
 		$this->client = new Client([
-			'base_url' => Blockchain::URL . '/merchant/' . $this->id . '/',
+			'base_url' => $baseUrl . '/merchant/' . $this->id . '/',
 			'Content-Type' => 'application/x-www-form-urlencoded',
 			'CAINFO' => __DIR__ . '/certificates/cacert.pem'
 		]);
